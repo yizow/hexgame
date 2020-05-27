@@ -1,10 +1,8 @@
 import os
-import sys
 import math
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
-import numpy as np
 
 class HexTile:
   """Represents a single tile"""
@@ -42,15 +40,19 @@ class HexMap:
     self.height = height
     self.tile_radius = tile_radius
 
+    self.tile_spacing_horiz = type(self).calc_tile_spacing_horiz(self.tile_radius)
+    self.tile_spacing_vert = type(self).calc_tile_spacing_vert(self.tile_radius)
+
     self.map = []
     for x in range(width):
       row = []
       for y in range(height):
-        center_x = x * self.tile_radius * 1.5
-        center_y = y * self.tile_radius * math.sqrt(3)
+        center_x = x * self.tile_spacing_horiz
+        center_y = y * self.tile_spacing_vert
         if x % 2:
           center_y += self.tile_radius * math.sqrt(3) * .5
-        row.append(HexTile(self.tile_radius, 2 * self.tile_radius + center_x, 2 * self.tile_radius + center_y))
+        border_offset = 2 * self.tile_radius
+        row.append(HexTile(self.tile_radius, border_offset + center_x, border_offset + center_y))
       self.map.append(row)
 
   def __getitem__(self, pos):
@@ -69,22 +71,8 @@ class HexMap:
       for y in range(self.height):
         yield self[x, y]
 
+  def calc_tile_spacing_horiz(radius):
+    return radius * 1.5
 
-SCREEN_WIDTH = 1600
-SCREEN_HEIGHT = 900
-
-COLOR = (255, 0, 0)
-RADIUS = 50
-BORDER_BUFFER = 2
-
-def main():
-  pygame.display.quit()
-  pygame.display.init()
-
-  main_display = pygame.display.set_mode(size=(SCREEN_WIDTH, SCREEN_HEIGHT), flags=pygame.RESIZABLE)
-  num_tiles_width = int((SCREEN_WIDTH - BORDER_BUFFER * RADIUS) / (1.5 * RADIUS))
-  num_tiles_height = int((SCREEN_HEIGHT - BORDER_BUFFER * RADIUS) / (math.sqrt(3) * RADIUS))
-  for tile in HexMap(num_tiles_width, num_tiles_height, RADIUS):
-    pygame.draw.polygon(main_display, COLOR, tile.corners, 1)
-
-  pygame.display.update()
+  def calc_tile_spacing_vert(radius):
+    return radius * math.sqrt(3)
