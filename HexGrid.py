@@ -72,6 +72,6 @@ def main():
             updated_rect = highlight_neighbors(hexmap, *hovered_tile)
             #main_display.blit(grid, updated_rect)
 
-        #pygame.display.update()
+        # pygame.display.update()
 
     pygame.quit()

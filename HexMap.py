@@ -26,67 +26,93 @@ class HexTile:
 
     @property
     def corners(self):
-        return [self.calc_corner(self.radius, degree) for degree in range(0, 360, 60)]
+        return [self.calc_corner(self.radius, degree)
+                for degree in range(0, 360, 60)]
 
     def calc_corner(self, radius, angle):
-        return tuple(map(round, (self.q + radius * math.cos(math.radians(angle)), self.r + radius * math.sin(math.radians(angle)))))
+        return tuple(map(round, (self.q + radius * math.cos(math.radians(angle)),
+                                 self.r + radius * math.sin(math.radians(angle)))))
 
 
 class HexMap:
+    """Purely mathematical representation of a map of hexagons
+
+    This class only deals with a hex map as discrete tiles. This includes
+    operations like finding neighbors, pathfinding, grid based manipulation,
+    etc.  Axial coordinates are used. All inputs and outputs should be (q, r)
+    tuple grid coordinates.
+
+    This class does NOT deal anything with pixels, drawing graphics, or the
+    like.
+
+    """
+
     directions = [(1, -1), (1, 0), (0, 1), (-1, 1), (-1, 0), (0, -1)]
 
-    def __init__(self, width=15, height=9, tile_radius=50):
+    def __init__(self, width=0, height=0, should_wrap=True):
+        """
+        Wrapping behavior is controlled by two things:
+            1) should_wrap
+            2) width/height == 0
+        These result in three modes when calling wrap() on negative/overflow indices:
+            1) wrap: should_wrap == True and width/height > 0
+            2) clamp: should_wrap == False and width/height > 0
+            3) infinite: width/height <= 0
+
+        Width and heigh have independent modes.
+
+        Args:
+            width (int):
+            height (int):
+            should_wrap (bool):
+
+        """
+
         self.width = width
         self.height = height
-        self.tile_radius = tile_radius
-        self.border_offset = 1 * self.tile_radius
-
-        self.tile_spacing_horiz = type(
-            self).calc_tile_spacing_horiz(self.tile_radius)
-        self.tile_spacing_vert = type(
-            self).calc_tile_spacing_vert(self.tile_radius)
-
-        self.map = []
-        for q in range(width):
-            row = []
-            for r in range(height):
-                center_q = q * self.tile_spacing_horiz
-                center_r = r * self.tile_spacing_vert
-                if q % 2:
-                    center_r += self.tile_spacing_vert * .5
-                # negative coordinates get cut off
-                row.append(HexTile(self.tile_radius, self.border_offset +
-                                   center_q, self.border_offset + center_r))
-            self.map.append(row)
-
-    def __getitem__(self, pos):
-        q, r = pos
-        return self.map[q][r]
-
-    def __setitem__(self, pos, tile):
-        q, r = pos
-        self.map[q][r] = tile
-
-    def __delitem__(self, pos):
-        raise TypeError("Cannot delete tile from map")
+        self.should_wrap = should_wrap
 
     def __iter__(self):
-        for q in range(self.width):
-            for r in range(self.height):
-                yield self[q, r]
+        if self.width > 0 and self.height > 0:
+            for q in range(self.width):
+                for r in range(self.height):
+                    yield self[q, r]
+        else:
+            return "Attempting to iterate an infinite map"
 
-    def calc_tile_spacing_horiz(radius):
-        return radius * 1.5
+    def wrap(self, q, r):
+        """Return modified (q,r) based on wrapping rules.
 
-    def calc_tile_spacing_vert(radius):
-        return radius * math.sqrt(3)
+        Return wrapped (q,r) if wrapping enabled and width/height > 0
+        Return clamped (q,r) if wrapping disabled and width/height > 0
+        Return unmodified otherwise
+
+        """
+        return self.wrap_single(
+            q, self.width), self.wrap_single(r, self.height)
+
+    def wrap_single(self, x, cap):
+        """Wrap on a single axis"""
+        if self.should_wrap:
+            if cap > 0:
+                x %= cap
+        else:
+            if cap > 0:
+                x = 0 if x < 0 else cap if x > cap else x
+        return x
 
     def get_neighbors(self, q, r, distance=1):
+        """
+        wrap/infinite: Return all neighbors.
+        clamp: Return only unclamped neighbors.
+
+        """
         neighbors = []
-        print("get_neighbors", [(distance * q, distance * r) for q, r in self.directions])
-        for q_delta, r_delta in [(distance * q, distance * r) for q, r in self.directions]:
-            neighbors.append(self[(q + q_delta) %
-                                  self.width, (r + r_delta) % self.height])
+        for x, y in [(q + distance * x, r + distance * y)
+                     for x, y in self.directions]:
+            wrapped = self.wrap(x, y)
+            if self.should_wrap or wrapped == (x, y):
+                neighbors.append(wrapped)
         return neighbors
 
     def hovered_tile(self, mouse_pos):
@@ -111,3 +137,6 @@ class HexMap:
             rounded_z = -rounded_x - rounded_y
 
         return rounded_x, rounded_y
+
+
+a = HexMap()
