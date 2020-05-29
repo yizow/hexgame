@@ -32,7 +32,7 @@ class HexTile:
         return [self.calc_corner(self.radius, degree) for degree in range(0, 360, 60)]
 
     def calc_corner(self, radius, angle):
-        return (self.x + radius * math.cos(math.radians(angle)), self.y + radius * math.sin(math.radians(angle)))
+        return tuple(map(round, (self.x + radius * math.cos(math.radians(angle)), self.y + radius * math.sin(math.radians(angle)))))
 
 
 class HexMap:
@@ -53,8 +53,9 @@ class HexMap:
                 center_x = x * self.tile_spacing_horiz
                 center_y = y * self.tile_spacing_vert
                 if x % 2:
-                    center_y += self.tile_radius * math.sqrt(3) * .5
-                border_offset = 2 * self.tile_radius
+                    center_y += self.tile_spacing_vert * .5
+                # negative coordinates get cut off
+                border_offset = 1 * self.tile_radius
                 row.append(HexTile(self.tile_radius, border_offset +
                                    center_x, border_offset + center_y))
             self.map.append(row)
