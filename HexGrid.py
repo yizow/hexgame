@@ -17,6 +17,72 @@ BUFFER = 50
 display = None
 
 
+class HexTile:
+    """Represents a single hex tile
+
+    Tied to a HexGrid objects. Tracks this tile's center, and calculates
+    corners on demand for the purposes of drawing.
+
+    """
+
+    def __init__(self, radius, *center):
+        self.radius = radius
+        self.center = center
+
+    @property
+    def center(self):
+        return (self.q, self.r)
+
+    @center.setter
+    def center(self, center):
+        num_args = len(center)
+        if num_args == 2:
+            self.q, self.r = center
+        else:
+            raise TypeError("Wrong number of arugment for HexTile center")
+
+    @property
+    def corners(self):
+        return [self.calc_corner(self.radius, degree)
+                for degree in range(0, 360, 60)]
+
+    def calc_corner(self, radius, angle):
+        return tuple(map(round, (self.q + radius * math.cos(math.radians(angle)),
+                                 self.r + radius * math.sin(math.radians(angle)))))
+
+
+class HexGrid:
+    """Displays a HexMap onto a screen
+
+    This class handles the translations between pixels and a HexMap. All UI
+    functions are handled by this class.
+
+    """
+
+    def hovered_tile(self, mouse_pos):
+        mouse_x, mouse_y = map(lambda x: x + self.border_offset, mouse_pos)
+        q = 2. / 3 * mouse_x / self.tile_radius
+        r = (-1. / 3 * mouse_x + math.sqrt(3) / 3 * mouse_y) / self.tile_radius
+        return type(self).hex_round(q, r)
+
+    def hex_round(q, r):
+        x, y, z = q, r, -q - r
+
+        rounded_x, rounded_y, rounded_z = map(round, (x, y, z))
+
+        x_delta, y_delta, z_delta = map(
+            abs, (x - rounded_x, y - rounded_y, z - rounded_z))
+
+        if x_delta > y_delta and x_delta > z_delta:
+            rounded_x = -rounded_y - rounded_z
+        elif y_delta > z_delta:
+            rounded_y = -rounded_x - rounded_z
+        else:
+            rounded_z = -rounded_x - rounded_y
+
+        return rounded_x, rounded_y
+
+
 def highlight_tile(tile):
     return pygame.draw.polygon(display, WHITE, tile.corners, 1)
 
