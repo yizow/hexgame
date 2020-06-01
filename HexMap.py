@@ -57,7 +57,7 @@ class HexMap:
                 x %= cap
         else:
             if cap > 0:
-                x = 0 if x < 0 else (cap if x >= cap else x)
+                x = 0 if x < 0 else ((cap - 1) if x >= cap else x)
         return x
 
     def get_neighbors(self, q, r, distance=1):
