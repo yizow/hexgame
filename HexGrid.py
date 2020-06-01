@@ -1,5 +1,6 @@
 import os
 import math
+import random
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
@@ -27,7 +28,6 @@ class HexTile:
         self.hexgrid = hexgrid
         self.radius = radius
         self.center = center
-        import random
         self.my_color = (random.randrange(0, 256), random.randrange(0, 256), random.randrange(0, 256))
 
     @property
@@ -56,8 +56,7 @@ class HexTile:
                                  self.r + radius * math.sin(math.radians(angle)))))
 
     def draw_tile(self):
-        # return pygame.draw.polygon(self.hexgrid.surface, constants.RED, self.corners, 1)
-        return pygame.draw.polygon(self.hexgrid.surface, self.my_color, self.corners, 1)
+        return pygame.draw.polygon(self.hexgrid.surface, constants.RED, self.corners, 1)
 
     def highlight_tile(self):
         return pygame.draw.polygon(self.hexgrid.surface, constants.WHITE, self.corners, 1)

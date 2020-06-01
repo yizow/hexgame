@@ -11,11 +11,14 @@ class HexMap:
 
     This class does NOT deal anything with pixels, drawing graphics, or the like.
 
+    Using odd-q offset coordinates; all odd columns shifted vertically
+
     """
 
-    directions = [(1, -1), (1, 0), (0, 1), (-1, 1), (-1, 0), (0, -1)]
+    directions = [[(1, -1), (1, 0), (0, 1), (-1, 0), (-1, -1), (0, -1)],
+                  [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (0, -1)]]
 
-    def __init__(self, width=0, height=0, should_wrap=True):
+    def __init__(self, width=0, height=0, should_wrap=False):
         """
         Wrapping behavior is controlled by two things:
             1) should_wrap
@@ -54,7 +57,7 @@ class HexMap:
                 x %= cap
         else:
             if cap > 0:
-                x = 0 if x < 0 else (cap - 1) if x >= cap else x
+                x = 0 if x < 0 else (cap if x >= cap else x)
         return x
 
     def get_neighbors(self, q, r, distance=1):
@@ -64,7 +67,7 @@ class HexMap:
 
         """
         neighbors = []
-        for x, y in [(q + distance * x, r + distance * y) for x, y in self.directions]:
+        for x, y in [(q + distance * x, r + distance * y) for x, y in self.directions[q & 1]]:
             wrapped = self.wrap(x, y)
             if self.should_wrap or wrapped == (x, y):
                 neighbors.append(wrapped)
