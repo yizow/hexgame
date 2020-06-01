@@ -12,21 +12,19 @@ SCREEN_WIDTH = 1600
 SCREEN_HEIGHT = 900
 
 RADIUS = 50
-TILE_BUFFER = 1
 BUFFER = 50
-
-display = None
 
 
 class HexTile:
     """Represents a single hex tile
 
-    Tied to a HexGrid objects. Tracks this tile's center, and calculates
+    Tied to a HexGrid object. Tracks this tile's center, and calculates
     corners on demand for the purposes of drawing.
 
     """
 
-    def __init__(self, radius, *center):
+    def __init__(self, hexgrid, radius, *center):
+        self.hexgrid = hexgrid
         self.radius = radius
         self.center = center
 
@@ -55,6 +53,12 @@ class HexTile:
         return tuple(map(round, (self.q + radius * math.cos(math.radians(angle)),
                                  self.r + radius * math.sin(math.radians(angle)))))
 
+    def draw_tile(self,):
+        return pygame.draw.polygon(self.hexgrid.surface, constants.RED, self.corners, 1)
+
+    def highlight_tile(self):
+        return pygame.draw.polygon(self.hexgrid.surface, constants.WHITE, self.corners, 1)
+
 
 class HexGrid:
     """Displays a HexMap onto a pygame.Surface
@@ -75,7 +79,7 @@ class HexGrid:
         """
         self.surface = surface
         self.radius = radius
-        self.inradius = HexTile(self.radius, 0, 0).inradius
+        self.inradius = HexTile(self, self.radius, 0, 0).inradius
 
         self.width = type(self).calc_num_columns(self.surface.get_width(), self.radius)
         self.x_offset = (self.surface.get_width() - self.width_used()) // 2
@@ -91,7 +95,7 @@ class HexGrid:
                 center_r = self.y_offset + self.inradius * (2 * tile + 1)
                 if col % 2:
                     center_r += self.inradius
-                column.append(HexTile(self.radius, round(center_q), round(center_r)))
+                column.append(HexTile(self, self.radius, round(center_q), round(center_r)))
             self.tiles.append(column)
 
     def __getitem__(self, pos):
@@ -106,18 +110,18 @@ class HexGrid:
         raise TypeError("Cannot delete HexTile from HexGrid")
 
     def __iter__(self):
-        for q in range(self.width):
-            for r in range(self.height):
+        for r in range(self.height):
+            for q in range(self.width):
                 yield self[q, r]
 
     def hovered_tile(self, mouse_pos):
         mouse_x, mouse_y = mouse_pos
         mouse_x -= self.x_offset + self.radius
         mouse_y -= self.y_offset + self.inradius
-        q = 2. / 3 * mouse_x / self.radius
-        r = (-1. / 3 * mouse_x + math.sqrt(3) / 3 * mouse_y) / self.radius
-        q, r = type(self).hex_round(q, r)
-        r += q // 2
+        q = 2 * mouse_x / math.sqrt(3) / self.inradius
+        r = (-mouse_y + mouse_x / math.sqrt(3)) / (2 * self.inradius)
+        q, r = map(round, (q, r))
+        r -= q // 2
         return self[q, r]
 
     def hex_round(q, r):
@@ -141,13 +145,13 @@ class HexGrid:
         return round(self.radius * (3 * self.width + 1) // 2)
 
     def height_used(self):
-        return round(self.inradius * (self.height + 1))
+        return round(self.inradius * (self.height * 2 + 1))
 
     def calc_num_columns(width, radius):
         return int((2 * width - radius) // (3 * radius))
 
     def calc_num_rows(height, inradius):
-        return int((height - inradius) // inradius)
+        return int((height - inradius) // (2 * inradius))
 
 
 def highlight_tile(tile):
@@ -162,30 +166,15 @@ def highlight_neighbors(hexmap, q, r):
 
 
 def main():
-    global display
     pygame.display.quit()
     pygame.display.init()
 
-    main_display = pygame.display.set_mode(
-        size=(SCREEN_WIDTH, SCREEN_HEIGHT), flags=pygame.RESIZABLE)
-    grid = pygame.Surface(
-        (SCREEN_WIDTH - 2 * BUFFER, SCREEN_HEIGHT - 2 * BUFFER))
+    main_display = pygame.display.set_mode(size=(SCREEN_WIDTH, SCREEN_HEIGHT), flags=pygame.RESIZABLE)
 
-    display = grid
+    hexgrid = HexGrid(main_display, radius=100)
 
-    screen_width = display.get_width()
-    screen_height = display.get_height()
-    num_tiles_width = int((screen_width - TILE_BUFFER * RADIUS) /
-                          HexMap.HexMap.calc_tile_spacing_horiz(RADIUS))
-    num_tiles_height = int((screen_height - TILE_BUFFER * RADIUS) /
-                           HexMap.HexMap.calc_tile_spacing_vert(RADIUS))
-
-    hexmap = HexMap.HexMap(num_tiles_width, num_tiles_height, RADIUS)
-    for tile in hexmap:
-        pygame.draw.polygon(display, RED, tile.corners, 1)
-
-    if display == grid:
-        main_display.blit(grid, (BUFFER, BUFFER))
+    for tile in hexgrid:
+        tile.draw_tile()
 
     pygame.display.update()
 
@@ -200,9 +189,6 @@ def main():
         if event.type == MOUSEMOTION:
             mouse_pos = pygame.mouse.get_pos()
 
-            grid_mouse_pos = (mouse_pos[0] - BUFFER, mouse_pos[1] - BUFFER)
-            hovered_tile = hexmap.hovered_tile(grid_mouse_pos)
-            updated_rect = highlight_neighbors(hexmap, *hovered_tile)
             #main_display.blit(grid, updated_rect)
 
         # pygame.display.update()

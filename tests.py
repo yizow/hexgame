@@ -67,16 +67,17 @@ class TestHexGrid(unittest.TestCase):
         self.assertEqual(4, HexGrid.calc_num_columns(13, 2))
 
     def test_calc_num_rows(self):
-        self.assertEqual(1, HexGrid.calc_num_rows(2, 1))
-        self.assertEqual(2, HexGrid.calc_num_rows(3, 1))
-        self.assertEqual(3, HexGrid.calc_num_rows(4, 1))
+        self.assertEqual(1, HexGrid.calc_num_rows(3, 1))
+        self.assertEqual(1, HexGrid.calc_num_rows(4, 1))
+        self.assertEqual(2, HexGrid.calc_num_rows(5, 1))
 
     def test_init(self):
-        hexgrid = HexGrid(self.surface, radius=20)
-        self.assertEqual(3, hexgrid.width)
-        self.assertEqual(1, hexgrid.height)
+        hexgrid = HexGrid(self.surface, radius=10)
+        self.assertEqual(6, hexgrid.width)
+        self.assertEqual(2, hexgrid.height)
 
-        expected_centers = [(20, 50), (50, 84), (80, 50)]
+        expected_centers = [(12, 23), (27, 41), (42, 23), (57, 41), (72, 23), (87, 41),
+                            (12, 58), (27, 75), (42, 58), (57, 75), (72, 58), (87, 75)]
 
         centers = [hexgrid[col, row].center for row in range(hexgrid.height) for col in range(hexgrid.width)]
         self.assertEqual(expected_centers, centers)
@@ -84,11 +85,12 @@ class TestHexGrid(unittest.TestCase):
         self.assertEqual(expected_centers, [tile.center for tile in hexgrid])
 
     def test_hovered_tile(self):
-        hexgrid = HexGrid(self.surface, radius=20)
-        self.assertEqual(hexgrid[0, 0], hexgrid.hovered_tile((20, 50)))
-        self.assertEqual(hexgrid[1, 0], hexgrid.hovered_tile((50, 50)))
-        self.assertEqual(hexgrid[2, 0], hexgrid.hovered_tile((80, 50)))
-
+        hexgrid = HexGrid(self.surface, radius=10)
+        self.assertEqual(hexgrid[0, 0], hexgrid.hovered_tile((12, 23)))
+        self.assertEqual(hexgrid[2, 0], hexgrid.hovered_tile((42, 23)))
+        self.assertEqual(hexgrid[1, 0], hexgrid.hovered_tile((27, 41)))
+        self.assertEqual(hexgrid[0, 1], hexgrid.hovered_tile((12, 58)))
+        self.assertEqual(hexgrid[1, 1], hexgrid.hovered_tile((27, 75)))
 
 
 if __name__ == '__main__':
