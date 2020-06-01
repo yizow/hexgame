@@ -1,20 +1,15 @@
 import os
 import math
 
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-import pygame
-
 
 class HexMap:
     """Purely mathematical representation of a map of hexagons
 
-    This class only deals with a hex map as discrete tiles. This includes
-    operations like finding neighbors, pathfinding, grid based manipulation,
-    etc.  Axial coordinates are used. All inputs and outputs should be (q, r)
-    tuple grid coordinates.
+    This class only deals with a hex map as discrete tiles. This includes operations like finding neighbors,
+    pathfinding, grid based manipulation, etc. Axial coordinates are used. All inputs and outputs should be
+    (q, r) tuple grid coordinates.
 
-    This class does NOT deal anything with pixels, drawing graphics, or the
-    like.
+    This class does NOT deal anything with pixels, drawing graphics, or the like.
 
     """
 
@@ -38,18 +33,9 @@ class HexMap:
             should_wrap (bool):
 
         """
-
         self.width = width
         self.height = height
         self.should_wrap = should_wrap
-
-    def __iter__(self):
-        if self.width > 0 and self.height > 0:
-            for q in range(self.width):
-                for r in range(self.height):
-                    yield self[q, r]
-        else:
-            return "Attempting to iterate an infinite map"
 
     def wrap(self, q, r):
         """Return modified (q,r) based on wrapping rules.
@@ -59,8 +45,7 @@ class HexMap:
         Return unmodified otherwise
 
         """
-        return self.wrap_single(
-            q, self.width), self.wrap_single(r, self.height)
+        return self.wrap_single(q, self.width), self.wrap_single(r, self.height)
 
     def wrap_single(self, x, cap):
         """Wrap on a single axis"""
@@ -79,8 +64,7 @@ class HexMap:
 
         """
         neighbors = []
-        for x, y in [(q + distance * x, r + distance * y)
-                     for x, y in self.directions]:
+        for x, y in [(q + distance * x, r + distance * y) for x, y in self.directions]:
             wrapped = self.wrap(x, y)
             if self.should_wrap or wrapped == (x, y):
                 neighbors.append(wrapped)

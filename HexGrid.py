@@ -1,4 +1,5 @@
 import os
+import math
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
@@ -30,6 +31,10 @@ class HexTile:
         self.center = center
 
     @property
+    def inradius(self):
+        return math.sqrt(3) * self.radius
+
+    @property
     def center(self):
         return (self.q, self.r)
 
@@ -52,18 +57,68 @@ class HexTile:
 
 
 class HexGrid:
-    """Displays a HexMap onto a screen
+    """Displays a HexMap onto a pygame.Surface
 
     This class handles the translations between pixels and a HexMap. All UI
     functions are handled by this class.
 
+    TODO: If we never use radius other than initialization, no point in storing it
+
     """
 
+    def __init__(self, surface, radius=50):
+        """
+        Args:
+            surface (pygame.Surface):
+            radius (int): Pixels between center and vertex of hexagon
+
+        """
+        self.surface = surface
+        self.radius = radius
+        self.inradius = HexTile(self.radius, 0, 0).inradius
+
+        self.width = type(self).calc_num_columns(self.surface.get_width(), self.radius)
+        self.x_offset = (self.surface.get_width() - self.width_used()) // 2
+
+        self.height = type(self).calc_num_rows(self.surface.get_height(), self.inradius)
+        self.y_offset = (self.surface.get_height() - self.height_used()) // 2
+
+        self.tiles = []
+        for col in range(self.width):
+            column = []
+            for tile in range(self.height):
+                center_q = self.x_offset + self.radius * (1.5 * col + 1)
+                center_r = self.y_offset + self.inradius * (2 * tile + 1)
+                if col % 2:
+                    center_r += self.inradius
+                column.append(HexTile(self.radius, round(center_q), round(center_r)))
+            self.tiles.append(column)
+
+    def __getitem__(self, pos):
+        q, r = pos
+        return self.tiles[q][r]
+
+    def __setitem__(self, pos, tile):
+        q, r = pos
+        self.tiles[q][r] = tile
+
+    def __delitem__(self, pos):
+        raise TypeError("Cannot delete HexTile from HexGrid")
+
+    def __iter__(self):
+        for q in range(self.width):
+            for r in range(self.height):
+                yield self[q, r]
+
     def hovered_tile(self, mouse_pos):
-        mouse_x, mouse_y = map(lambda x: x + self.border_offset, mouse_pos)
-        q = 2. / 3 * mouse_x / self.tile_radius
-        r = (-1. / 3 * mouse_x + math.sqrt(3) / 3 * mouse_y) / self.tile_radius
-        return type(self).hex_round(q, r)
+        mouse_x, mouse_y = mouse_pos
+        mouse_x -= self.x_offset + self.radius
+        mouse_y -= self.y_offset + self.inradius
+        q = 2. / 3 * mouse_x / self.radius
+        r = (-1. / 3 * mouse_x + math.sqrt(3) / 3 * mouse_y) / self.radius
+        q, r = type(self).hex_round(q, r)
+        r += q // 2
+        return self[q, r]
 
     def hex_round(q, r):
         x, y, z = q, r, -q - r
@@ -81,6 +136,18 @@ class HexGrid:
             rounded_z = -rounded_x - rounded_y
 
         return rounded_x, rounded_y
+
+    def width_used(self):
+        return round(self.radius * (3 * self.width + 1) // 2)
+
+    def height_used(self):
+        return round(self.inradius * (self.height + 1))
+
+    def calc_num_columns(width, radius):
+        return int((2 * width - radius) // (3 * radius))
+
+    def calc_num_rows(height, inradius):
+        return int((height - inradius) // inradius)
 
 
 def highlight_tile(tile):
