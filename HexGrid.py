@@ -9,12 +9,6 @@ from pygame.locals import *
 import constants
 import HexMap
 
-SCREEN_WIDTH = 1600
-SCREEN_HEIGHT = 900
-
-RADIUS = 50
-BUFFER = 50
-
 
 class HexTile:
     """Represents a single hex tile
@@ -22,13 +16,20 @@ class HexTile:
     Tied to a HexGrid object. Tracks this tile's center, and calculates
     corners on demand for the purposes of drawing.
 
+    Also tracks a unit located in this tile.
+
     """
 
     def __init__(self, hexgrid, radius, *center):
         self.hexgrid = hexgrid
+        self.surface = self.hexgrid.surface
         self.radius = radius
         self.center = center
         self.my_color = (random.randrange(0, 256), random.randrange(0, 256), random.randrange(0, 256))
+        self.unit = None
+
+    def __repr__(self):
+        return "HexTile at: {}".format(self.center)
 
     @property
     def inradius(self):
@@ -55,14 +56,28 @@ class HexTile:
         return tuple(map(round, (self.q + radius * math.cos(math.radians(angle)),
                                  self.r + radius * math.sin(math.radians(angle)))))
 
-    def draw_tile(self):
-        return pygame.draw.polygon(self.hexgrid.surface, constants.RED, self.corners, 1)
+    def draw_self(self):
+        pygame.draw.polygon(self.surface, constants.BLACK, self.corners, 0)
+        return pygame.draw.polygon(self.surface, constants.RED, self.corners, 1)
+
+    def draw_unit(self):
+        if self.unit:
+            self.unit.draw_unit(self.surface, self.center)
 
     def highlight_tile(self):
-        return pygame.draw.polygon(self.hexgrid.surface, constants.WHITE, self.corners, 1)
+        return pygame.draw.polygon(self.surface, constants.WHITE, self.corners, 1)
 
-    def __repr__(self):
-        return "HexTile at: {}".format(self.center)
+    def draw_tile(self):
+        self.draw_self()
+        self.draw_unit()
+
+    def add_unit(self, unit):
+        self.unit = unit
+        self.draw_tile()
+
+    def delete_unit(self):
+        self.unit = None
+        self.draw_tile()
 
 
 class HexGrid:
@@ -188,61 +203,3 @@ class HexGrid:
             neighbor.highlight_tile()
 
         self.previous_selected = tile
-
-
-def main():
-    pygame.display.quit()
-    pygame.display.init()
-
-    main_display = pygame.display.set_mode(size=(SCREEN_WIDTH, SCREEN_HEIGHT), flags=pygame.RESIZABLE)
-
-    hexgrid = HexGrid(main_display, radius=75)
-
-    for tile in hexgrid:
-        tile.draw_tile()
-
-    for tile in hexgrid:
-        pygame.draw.circle(main_display, constants.BLUE, tile.center, 2)
-
-    pygame.display.update()
-
-    running = True
-    while running:
-        event = pygame.event.wait()
-
-        if event.type == QUIT:
-            running = False
-            break
-
-        if event.type == KEYUP:
-            if event.key == K_q:
-                running = False
-                break
-
-        elif event.type == MOUSEMOTION:
-            mouse_pos = pygame.mouse.get_pos()
-            hovered_tile = hexgrid.hovered_tile(mouse_pos)
-            if hovered_tile:
-                hexgrid.highlight_neighbors(hovered_tile)
-
-        elif event.type == MOUSEBUTTONUP:
-            if event.button == 3:
-                main_display.fill((0, 0, 0))
-            for tile in hexgrid:
-                tile.draw_tile()
-            hexgrid.previous_selected = None
-
-        elif event.type == MOUSEBUTTONDOWN:
-            if event.button == 3:
-                continue
-            print("executing map")
-            for x in range(main_display.get_width()):
-                for y in range(main_display.get_height()):
-                    hovered_tile = hexgrid.hovered_tile((x, y))
-                    if hovered_tile:
-                        color = hovered_tile.my_color
-                        main_display.set_at((x, y), color)
-
-        pygame.display.update()
-
-    pygame.quit()
