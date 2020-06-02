@@ -15,6 +15,7 @@ class HexMap:
 
     """
 
+    cube_directions = [(1, -1, 0), (1, 0, -1), (0, 1, -1), (-1, 1, 0), (-1, 0, 1), (0, -1, 1)]
     directions = [[(1, -1), (1, 0), (0, 1), (-1, 0), (-1, -1), (0, -1)],
                   [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (0, -1)]]
 
@@ -60,6 +61,15 @@ class HexMap:
                 x = 0 if x < 0 else ((cap - 1) if x >= cap else x)
         return x
 
+    def cube_to_offset(x, y, z):
+        return (x, y + (x - (x & 1)) // 2)
+
+    def offset_to_cube(q, r):
+        x = q
+        y = r - (q - (q & 1)) // 2
+        z = -x - y
+        return (x, y, z)
+
     def get_neighbors(self, q, r, distance=1):
         """
         wrap/infinite: Return all neighbors.
@@ -67,8 +77,13 @@ class HexMap:
 
         """
         neighbors = []
-        for x, y in [(q + distance * x, r + distance * y) for x, y in self.directions[q & 1]]:
-            wrapped = self.wrap(x, y)
-            if self.should_wrap or wrapped == (x, y):
+        for direction in self.cube_directions:
+            scaled_direction = [distance * coord for coord in direction]
+            cube_coordinates = type(self).offset_to_cube(q, r)
+            neighbor = [sum(coord) for coord in zip(scaled_direction, cube_coordinates)]
+            neighbor = type(self).cube_to_offset(*neighbor)
+            wrapped = self.wrap(*neighbor)
+
+            if self.should_wrap or wrapped == neighbor:
                 neighbors.append(wrapped)
         return neighbors

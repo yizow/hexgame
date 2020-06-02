@@ -29,7 +29,7 @@ class TestHexMap(unittest.TestCase):
 
     def test_get_neighbors_distance(self):
         hexmap = HexMap.HexMap(0, 0, False)
-        expected = [(2, -2), (2, 0), (0, 2), (-2, 0), (-2, -2), (0, -2)]
+        expected = [(2, -1), (2, 1), (0, 2), (-2, 1), (-2, -1), (0, -2)]
         self.assertEqual(expected, hexmap.get_neighbors(0, 0, 2))
 
     def test_get_neighbors_middle(self):
