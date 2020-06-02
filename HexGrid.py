@@ -25,6 +25,7 @@ class HexTile:
         self.surface = self.hexgrid.surface
         self.radius = radius
         self.center = center
+        self.corners = [self.calc_corner(self.radius, degree) for degree in range(0, 360, 60)]
         self.my_color = (random.randrange(0, 256), random.randrange(0, 256), random.randrange(0, 256))
         self.unit = None
 
@@ -47,11 +48,6 @@ class HexTile:
         else:
             raise TypeError("Wrong number of arugment for HexTile center")
 
-    @property
-    def corners(self):
-        return [self.calc_corner(self.radius, degree)
-                for degree in range(0, 360, 60)]
-
     def calc_corner(self, radius, angle):
         return tuple(map(round, (self.q + radius * math.cos(math.radians(angle)),
                                  self.r + radius * math.sin(math.radians(angle)))))
@@ -60,24 +56,22 @@ class HexTile:
         pygame.draw.polygon(self.surface, constants.BLACK, self.corners, 0)
         return pygame.draw.polygon(self.surface, constants.RED, self.corners, 1)
 
-    def draw_unit(self):
-        if self.unit:
-            self.unit.draw_unit(self.surface, self.center)
-
     def highlight_tile(self):
         return pygame.draw.polygon(self.surface, constants.WHITE, self.corners, 1)
 
     def draw_tile(self):
-        self.draw_self()
-        self.draw_unit()
+        rect = self.draw_self()
+        if self.unit:
+            return rect.union(self.unit.draw_unit(self.surface, self.center))
+        return rect
 
     def add_unit(self, unit):
         self.unit = unit
-        self.draw_tile()
+        return self.draw_tile()
 
     def delete_unit(self):
         self.unit = None
-        self.draw_tile()
+        return self.draw_tile()
 
 
 class HexGrid:
@@ -191,15 +185,18 @@ class HexGrid:
         return int((height - inradius) // (2 * inradius))
 
     def highlight_neighbors(self, tile, distance=1):
+        updated_rects = []
+
         if self.previous_selected is not None:
             if self.previous_selected == tile:
-                return
+                return None
             previous_neighbors = self.hexmap.get_neighbors(*self[self.previous_selected], distance)
             for previous_tile in [self[index] for index in previous_neighbors]:
-                previous_tile.draw_tile()
+                updated_rects.append(previous_tile.draw_tile())
 
         neighbors = self.hexmap.get_neighbors(*self[tile], distance)
         for neighbor in [self[index] for index in neighbors]:
-            neighbor.highlight_tile()
+            updated_rects.append(neighbor.highlight_tile())
 
         self.previous_selected = tile
+        return updated_rects
