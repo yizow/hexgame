@@ -108,6 +108,8 @@ class HexGrid:
 
         self.hexmap = HexMap.HexMap(self.width, self.height, should_wrap=should_wrap)
 
+        self.previous_selected = None
+
     def __getitem__(self, pos):
         if isinstance(pos, HexTile):
             return self.get_index(pos)
@@ -174,9 +176,18 @@ class HexGrid:
         return int((height - inradius) // (2 * inradius))
 
     def highlight_neighbors(self, tile, distance=1):
+        if self.previous_selected is not None:
+            if self.previous_selected == tile:
+                return
+            previous_neighbors = self.hexmap.get_neighbors(*self[self.previous_selected], distance)
+            for previous_tile in [self[index] for index in previous_neighbors]:
+                previous_tile.draw_tile()
+
         neighbors = self.hexmap.get_neighbors(*self[tile], distance)
-        for tile in [self[index] for index in neighbors]:
-            tile.highlight_tile()
+        for neighbor in [self[index] for index in neighbors]:
+            neighbor.highlight_tile()
+
+        self.previous_selected = tile
 
 
 def main():
@@ -185,7 +196,7 @@ def main():
 
     main_display = pygame.display.set_mode(size=(SCREEN_WIDTH, SCREEN_HEIGHT), flags=pygame.RESIZABLE)
 
-    hexgrid = HexGrid(main_display, radius=200)
+    hexgrid = HexGrid(main_display, radius=75)
 
     for tile in hexgrid:
         tile.draw_tile()
@@ -203,6 +214,11 @@ def main():
             running = False
             break
 
+        if event.type == KEYUP:
+            if event.key == K_q:
+                running = False
+                break
+
         elif event.type == MOUSEMOTION:
             mouse_pos = pygame.mouse.get_pos()
             hovered_tile = hexgrid.hovered_tile(mouse_pos)
@@ -214,6 +230,7 @@ def main():
                 main_display.fill((0, 0, 0))
             for tile in hexgrid:
                 tile.draw_tile()
+            hexgrid.previous_selected = None
 
         elif event.type == MOUSEBUTTONDOWN:
             if event.button == 3:
