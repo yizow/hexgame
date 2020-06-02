@@ -184,17 +184,17 @@ class HexGrid:
     def calc_num_rows(height, inradius):
         return int((height - inradius) // (2 * inradius))
 
-    def highlight_neighbors(self, tile, distance=1):
+    def highlight_ring(self, tile, distance=1):
         updated_rects = []
 
         if self.previous_selected is not None:
             if self.previous_selected == tile:
                 return None
-            previous_neighbors = self.hexmap.get_neighbors(*self[self.previous_selected], distance)
+            previous_neighbors = self.hexmap.get_ring(*self[self.previous_selected], distance)
             for previous_tile in [self[index] for index in previous_neighbors]:
                 updated_rects.append(previous_tile.draw_tile())
 
-        neighbors = self.hexmap.get_neighbors(*self[tile], distance)
+        neighbors = self.hexmap.get_ring(*self[tile], distance)
         for neighbor in [self[index] for index in neighbors]:
             updated_rects.append(neighbor.highlight_tile())
 

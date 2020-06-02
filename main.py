@@ -57,25 +57,26 @@ def main():
 
         elif event.type == MOUSEMOTION:
             if hovered_tile:
-                updated_rects = hexgrid.highlight_neighbors(hovered_tile, distance=2)
+                updated_rects = hexgrid.highlight_ring(hovered_tile, distance=2)
 
         elif event.type == MOUSEBUTTONUP:
             if event.button == 3:
                 main_display.fill((0, 0, 0))
-            for tile in hexgrid:
-                tile.draw_tile()
-            hexgrid.previous_selected = None
+                for tile in hexgrid:
+                    tile.draw_tile()
+                pygame.display.flip()
+                hexgrid.previous_selected = None
 
         elif event.type == MOUSEBUTTONDOWN:
-            if event.button == 3:
-                continue
-            print("executing map")
-            for x in range(main_display.get_width()):
-                for y in range(main_display.get_height()):
-                    hovered_tile = hexgrid.hovered_tile((x, y))
-                    if hovered_tile:
-                        color = hovered_tile.my_color
-                        main_display.set_at((x, y), color)
+            if event.button == 1:
+                print("executing map")
+                for x in range(main_display.get_width()):
+                    for y in range(main_display.get_height()):
+                        hovered_tile = hexgrid.hovered_tile((x, y))
+                        if hovered_tile:
+                            color = hovered_tile.my_color
+                            main_display.set_at((x, y), color)
+                pygame.display.flip()
 
         if updated_rects is not None:
             pygame.display.update(updated_rects)

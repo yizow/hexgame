@@ -12,6 +12,19 @@ from HexGrid import HexGrid
 
 class TestHexMap(unittest.TestCase):
 
+    def test_contains(self):
+        hexmap = HexMap.HexMap(8, 8, False)
+        self.assertEqual(True, hexmap.contains(0, 0))
+        self.assertEqual(True, hexmap.contains(5, 5))
+        self.assertEqual(False, hexmap.contains(10, 10))
+        self.assertEqual(False, hexmap.contains(-5, -5))
+
+    def test_contains_infinite(self):
+        hexmap = HexMap.HexMap(0, 0, False)
+        self.assertEqual(True, hexmap.contains(0, 0))
+        self.assertEqual(True, hexmap.contains(5, 5))
+        self.assertEqual(True, hexmap.contains(-5, -5))
+
     def test_get_neighbors_infinite(self):
         hexmap = HexMap.HexMap(0, 0, False)
         expected = [(1, -1), (1, 0), (0, 1), (-1, 0), (-1, -1), (0, -1)]
@@ -36,6 +49,22 @@ class TestHexMap(unittest.TestCase):
         hexmap = HexMap.HexMap(5, 2, False)
         expected = [(2, 0), (2, 1), (1, 1), (0, 1), (0, 0)]
         self.assertEqual(expected, hexmap.get_neighbors(1, 0))
+
+    def test_ring_full(self):
+        hexmap = HexMap.HexMap(10, 10, False)
+
+        expected = [(3, 3), (4, 3), (5, 3), (5, 4), (4, 5), (3, 4)]
+        self.assertEqual(expected, hexmap.get_ring(4, 4, 1))
+
+        expected = [(2, 3), (3, 2), (4, 2), (5, 2), (6, 3), (6, 4),
+                    (6, 5), (5, 5), (4, 6), (3, 5), (2, 5), (2, 4)]
+        self.assertEqual(expected, hexmap.get_ring(4, 4, 2))
+
+    def test_ring_clipped(self):
+        hexmap = HexMap.HexMap(7, 5, False)
+
+        expected = [(2, 3), (3, 2), (4, 2), (5, 2), (6, 3), (6, 4), (2, 4)]
+        self.assertEqual(expected, hexmap.get_ring(4, 4, 2))
 
 
 class TestHexGrid(unittest.TestCase):

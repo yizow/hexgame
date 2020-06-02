@@ -70,6 +70,10 @@ class HexMap:
         z = -x - y
         return (x, y, z)
 
+    def travel(cube_coordinates, direction):
+        """Cube coordinates: travel direction from (x, y, z)"""
+        return [sum(coord) for coord in zip(cube_coordinates, direction)]
+
     def get_neighbors(self, q, r, distance=1):
         """
         wrap/infinite: Return all neighbors.
@@ -80,10 +84,37 @@ class HexMap:
         for direction in self.cube_directions:
             scaled_direction = [distance * coord for coord in direction]
             cube_coordinates = type(self).offset_to_cube(q, r)
-            neighbor = [sum(coord) for coord in zip(scaled_direction, cube_coordinates)]
+            neighbor = type(self).travel(cube_coordinates, scaled_direction)
             neighbor = type(self).cube_to_offset(*neighbor)
             wrapped = self.wrap(*neighbor)
 
             if self.should_wrap or wrapped == neighbor:
                 neighbors.append(wrapped)
         return neighbors
+
+    def contains(self, q, r):
+        if self.width > 0:
+            if q < 0 or q >= self.width:
+                return False
+        if self.height > 0:
+            if r < 0 or r >= self.height:
+                return False
+        return True
+
+    def get_ring(self, q, r, distance):
+        """First tile is to upper left, ring moves clockwise"""
+        if distance == 0:
+            return [(q, r)]
+
+        current = type(self).offset_to_cube(q, r)
+        current = type(self).travel(current, (distance * coord for coord in self.cube_directions[-2]))
+
+        ring = [type(self).cube_to_offset(*current)]
+        for direction in self.cube_directions:
+            for _ in range(distance):
+                current = type(self).travel(current, direction)
+                ring.append(type(self).cube_to_offset(*current))
+
+        # first and last tiles are duplicated
+        ring = ring[:-1]
+        return [tile for tile in ring if self.contains(*tile)]
